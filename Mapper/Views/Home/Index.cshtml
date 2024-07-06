@@ -1,0 +1,83 @@
+﻿@using Newtonsoft.Json
+
+@model List<MarkerViewModel>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Job Mapper</title>
+    <style>
+        #map {
+            height: 400px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Jobs for Find</h1>
+    <div id="map"></div>
+    <script>
+        var markers = @Html.Raw(JsonConvert.SerializeObject(Model));
+
+        function initMap() {
+            console.log("Initializing map...");
+            console.log(markers);
+            var map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 11,
+                center: { lat: 40.764313, lng: -73.978426 }
+            });
+
+            if (!markers || markers.length === 0) {
+                console.log("No markers data available.");
+                return;
+            }
+
+            markers.forEach(function (marker) {
+                var position = { lat: marker.Lat, lng: marker.Lng };
+                var title = marker.Title;
+                var website = marker.Website;
+                var location = marker.Location;
+
+                var infoWindowContent = '<div><h3>' + title + '</h3>' +
+                    '<p><a href="' + website + '" target="_blank">' + website + '</a></p>' +
+                    '<p>Location: ' + location + '</p></div>';
+                var infoWindow = new google.maps.InfoWindow({
+                    content: infoWindowContent
+                });
+
+                var googleMarker = new google.maps.Marker({
+                    position: position,
+                    map: map,
+                    title: title
+                });
+
+                googleMarker.addListener('click', function () {
+                    var infoContent = '';
+
+                    var locationMarkers = markers.filter(function (m) {
+                        return m.Location === location;
+                    });
+
+                    locationMarkers.forEach(function (m, index) {
+                        infoContent += '<div><h3>' + m.Title + '</h3>' +
+                            '<p><a href="' + m.Website + '" target="_blank">' + m.Website + '</a></p>' +
+                            '<p>Location: ' + m.Location + '</p></div>';
+
+                        if (index !== locationMarkers.length - 1) {
+                            infoContent += '<hr>';
+                        }
+                    });
+
+                    infoWindow.setContent(infoContent);
+                    infoWindow.open(map, googleMarker);
+                });
+            });
+        }
+
+        function googleMapsError() {
+            console.error("Failed to load Google Maps API.");
+        }
+    </script>
+    <script async defer src="/api/maps" onerror="googleMapsError()"></script>
+</body>
+</html>
